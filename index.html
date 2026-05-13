@@ -1,0 +1,982 @@
+
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 7</title>
+    <style>
+        :root {
+            --soft-pink: #fff0f3;
+            --soft-purple: #f3f0ff;
+            --accent-color: #008080;
+            --deep-accent: #800000;
+            --text-main: #4a4a4a;
+            --white: #ffffff;
+            --grid-line: #e0e0e0;
+            --button-grad: linear-gradient(to top, #800000 0%, #d63031 100%);
+        }
+
+        body {
+            font-family: 'Comfortaa', sans-serif;
+            margin: 0;
+            background-color: var(--soft-purple);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .lesson-header {
+            width: 100%;
+            max-width: 900px;
+            background: var(--white);
+            padding: 25px;
+            border-radius: 0 0 40px 40px;
+            box-shadow: 0 10px 30px rgba(128, 0, 0, 0.05);
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .lesson-header h1 {
+            color: var(--deep-accent);
+            font-size: 1.8rem;
+            margin: 0;
+        }
+
+        .trainer-container {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            max-width: 950px;
+            width: 95%;
+            margin-bottom: 30px;
+        }
+
+        .trainer-layout {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .grid-container {
+            position: relative;
+            flex: 1.2;
+            min-width: 320px;
+            padding: 25px;
+        }
+
+        .grid-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background-image: 
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 10% 10%;
+            border: 1px solid #ccc;
+        }
+
+        .axis {
+            position: absolute;
+            background: #333;
+            z-index: 2;
+        }
+
+        .axis-x {
+            top: 50%;
+            left: -5%;
+            width: 110%;
+            height: 2px;
+        }
+
+        .axis-x::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -4px;
+            border-left: 10px solid #333;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+
+        .axis-y {
+            left: 50%;
+            top: -5%;
+            width: 2px;
+            height: 110%;
+        }
+
+        .axis-y::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -4px;
+            border-bottom: 10px solid #333;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+        }
+
+        .label-axis {
+            position: absolute;
+            font-weight: bold;
+            font-size: 16px;
+            color: var(--deep-accent);
+        }
+
+        .tick-label {
+            position: absolute;
+            font-size: 11px;
+            color: #999;
+            pointer-events: none;
+            font-weight: bold;
+        }
+
+        .point {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            border: 2px solid white;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .point.found {
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+        }
+
+        .point.active-target {
+            box-shadow: 0 0 0 5px rgba(0, 128, 128, 0.2);
+            animation: pulse-target 1.5s infinite;
+            z-index: 6;
+        }
+
+        @keyframes pulse-target {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.3); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .controls {
+            flex: 1;
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .task-card {
+            background: var(--soft-pink);
+            padding: 25px;
+            border-radius: 25px;
+            border-left: 8px solid var(--deep-accent);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .stats {
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .input-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-box label { 
+            font-size: 1.2rem; 
+            color: var(--deep-accent); 
+            font-weight: bold; 
+        }
+
+        input {
+            width: 65px;
+            height: 50px;
+            border-radius: 15px;
+            border: 2px solid #ddd;
+            text-align: center;
+            font-family: inherit;
+            font-size: 1.4rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus { 
+            border-color: var(--accent-color);
+            box-shadow: 0 0 8px rgba(0, 128, 128, 0.2);
+        }
+
+        /* Убираем стрелочки у input number */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        button {
+            background: var(--button-grad);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: inherit;
+            font-weight: bold;
+            font-size: 1.1rem;
+            width: 100%;
+            box-shadow: 0 6px 20px rgba(128, 0, 0, 0.2);
+            transition: transform 0.2s;
+        }
+
+        button:active { transform: scale(0.97); }
+
+        .feedback {
+            font-weight: bold;
+            margin-top: 10px;
+            min-height: 24px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .success { color: var(--accent-color); }
+        .error { color: var(--deep-accent); }
+
+
+/* блок теории */
+
+ .theory-section {
+            max-width: 850px;
+            margin: 40px auto;
+            padding: 40px;
+            background: var(--soft-purple);
+            border-radius: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .theory-section::before {
+            content: '💡';
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            font-size: 80px;
+            opacity: 0.1;
+        }
+
+        .theory-header {
+            margin-bottom: 30px;
+        }
+
+        .theory-header h2 {
+            color: var(--deep-accent);
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .intro-text {
+            font-size: 1.1rem;
+            color: var(--text-main);
+        }
+
+        .coords-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .coord-card {
+            background: var(--white);
+            padding: 25px;
+            border-radius: 25px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            border-bottom: 4px solid transparent;
+            transition: transform 0.3s ease;
+        }
+
+        .coord-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-x { border-color: #ff4d4d; }
+        .card-y { border-color: #4d79ff; }
+
+        .coord-card h3 {
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+        }
+
+        .icon-box {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .card-x .icon-box { background: #ff4d4d; }
+        .card-y .icon-box { background: #4d79ff; }
+
+        .example-box {
+            margin-top: 40px;
+            background: var(--soft-pink);
+            padding: 25px;
+            border-radius: 20px;
+            border-left: 6px solid var(--deep-accent);
+        }
+
+        .important-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            margin-top: 20px;
+            font-style: italic;
+            color: var(--deep-accent);
+            font-weight: bold;
+        }
+
+/* блок с заданием */
+
+.practice-section {
+            max-width: 900px;
+            margin: 40px auto;
+        }
+
+        .practice-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .practice-header h2 {
+            color: var(--deep-accent);
+            font-size: 2rem;
+        }
+
+        .tasks-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .task-card {
+            background: var(--white);
+            border-radius: 30px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.07);
+            border: 1px solid var(--soft-purple);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .task-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .task-image {
+            width: 100%;
+            height: 180px;
+            background-color: var(--soft-purple);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .task-image img {
+            max-width: 80%;
+            height: auto;
+        }
+
+        /* Анимация для мяча */
+        .ball-animation {
+            width: 50px;
+            height: 50px;
+            background: #ff4d4d;
+            border-radius: 50%;
+            position: absolute;
+            animation: jump 1.5s infinite ease-in-out;
+            box-shadow: inset -5px -5px 10px rgba(0,0,0,0.2);
+        }
+
+        @keyframes jump {
+            0%, 100% { transform: translateY(40px); }
+            50% { transform: translateY(-40px); }
+        }
+
+        /* Анимация для краба */
+        .crab-animation {
+            font-size: 50px;
+            position: absolute;
+            animation: run 2s infinite linear;
+        }
+
+        @keyframes run {
+            0% { transform: translateX(-80px); }
+            50% { transform: translateX(80px); }
+            100% { transform: translateX(-80px); }
+        }
+
+        .task-card h3 {
+            color: var(--accent-color);
+            margin: 10px 0;
+            font-size: 1.3rem;
+        }
+
+        .task-description {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .hint-badge {
+            background: var(--soft-pink);
+            color: var(--deep-accent);
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+  /* Стили для кнопки перехода */
+        .cta-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .scratch-button {
+            background: var(--button-grad);
+            color: white;
+            text-decoration: none;
+            padding: 18px 40px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 10px 25px rgba(128, 0, 0, 0.25);
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .scratch-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 15px 30px rgba(128, 0, 0, 0.35);
+        }
+
+        .scratch-button:active {
+            transform: scale(0.98);
+        }
+
+        /* проект  */
+
+           .control-section {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 50px;
+            border-radius: 40px;
+            background-color: var(--white);
+            background-image: radial-gradient(var(--dot-color) 2px, transparent 2px);
+            background-size: 30px 30px;
+            border: 1px solid var(--soft-pink);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.03);
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h2 {
+            color: var(--deep-accent);
+            font-size: 2.2rem;
+            margin-bottom: 15px;
+        }
+
+        /* Блок для встроенного фрейма игры */
+        .game-frame-container {
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background: #f9f9f9;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            border: 2px dashed var(--soft-purple);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Визуализация стрелочек */
+        .keyboard-visual {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 30px 0;
+        }
+
+        .key-group {
+            display: grid;
+            grid-template-areas: 
+                ". up ."
+                "left down right";
+            gap: 8px;
+        }
+
+        .key {
+            width: 60px;
+            height: 60px;
+            background: var(--white);
+            border: 2px solid var(--soft-purple);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--deep-accent);
+            box-shadow: 0 4px 0 var(--soft-purple);
+            transition: all 0.2s ease;
+            cursor: default;
+        }
+
+        /* Эффект при наведении мышкой вместо JS */
+        .key:hover {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 var(--soft-purple);
+            background: var(--soft-pink);
+            border-color: var(--deep-accent);
+        }
+
+        .key span { font-size: 0.75rem; color: var(--text-main); margin-top: 2px; }
+
+        .up { grid-area: up; }
+        .down { grid-area: down; }
+        .left { grid-area: left; }
+        .right { grid-area: right; }
+
+        .formula-box {
+            background: var(--soft-purple);
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border-left: 5px solid var(--accent-color);
+        }
+
+        /* Таблица подсказок */
+        .hint-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        .hint-row {
+            background: var(--white);
+        }
+
+        .hint-cell {
+            padding: 18px;
+            border: 1px solid var(--soft-purple);
+        }
+
+        .hint-cell:first-child { 
+            border-radius: 15px 0 0 15px; 
+            width: 80px; 
+            text-align: center; 
+            font-size: 1.4rem;
+            color: var(--deep-accent);
+            font-weight: bold;
+        }
+        .hint-cell:last-child { 
+            border-radius: 0 15px 15px 0; 
+            color: var(--text-main); 
+            line-height: 1.5;
+        }
+        .hint-cell b { color: var(--accent-color); }
+
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 30px;
+            margin-bottom: 40px;
+        }
+
+        .scratch-button {
+            background: var(--button-grad);
+            color: white;
+            text-decoration: none;
+            padding: 18px 50px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 25px rgba(128, 0, 0, 0.2);
+            transition: 0.3s;
+            text-align: center;
+        }
+
+        .scratch-button:hover { transform: scale(1.05); }
+
+        @media (max-width: 600px) {
+            .control-section { padding: 25px; }
+            .keyboard-visual { transform: scale(0.9); }
+            .header h2 { font-size: 1.6rem; }
+        }
+
+        @media (max-width: 700px) {
+            .tasks-container { grid-template-columns: 1fr; }
+
+        @media (max-width: 650px) {
+            .coords-grid { grid-template-columns: 1fr; }
+            .theory-section { padding: 25px; }
+        }
+
+        @media (max-width: 768px) {
+            .trainer-layout { flex-direction: column; }
+            .grid-container { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="lesson-header">
+        <h1>Изменение координат. Управление персонажем</h1>
+    </header>
+
+    <div class="trainer-container">
+        <div class="trainer-layout">
+            
+            <div class="grid-container">
+                <div class="grid-wrapper" id="grid">
+                    <div class="axis axis-x"></div>
+                    <div class="axis axis-y"></div>
+                    <div class="label-axis" style="right: -25px; top: 46%;">X</div>
+                    <div class="label-axis" style="left: 47%; top: -35px;">Y</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="task-card">
+                    <div class="stats" id="stats">Осталось найти: 10</div>
+                    <p id="task-text" style="font-size: 1.1rem; margin: 0; line-height: 1.5;">Определи координаты:</p>
+                    
+                    <div class="input-group">
+                        <div class="input-box">
+                            <label>X</label>
+                            <input type="number" id="inputX" placeholder="">
+                        </div>
+                        <div class="input-box">
+                            <label>Y</label>
+                            <input type="number" id="inputY" placeholder="">
+                        </div>
+                    </div>
+                    <div class="feedback" id="feedback"></div>
+                    <button id="mainBtn" onclick="checkAnswer()">Проверить!</button>
+                </div>
+                
+                <p style="font-size: 0.9em; color: #777; line-height: 1.4; text-align: center;">
+                    <i>Находи пульсирующую точку и вводи её адрес.</i>
+                </p>
+            </div>
+        </div>
+    </div>
+
+<section class="theory-section">
+        <div class="theory-header">
+            <h2>Как понять координаты? ✨</h2>
+        <!--    <p class="intro-text">Представь, что сцена в Scratch — это карта сокровищ. Чтобы найти клад, нам нужно знать два секретных числа.</p>-->
+        </div>
+
+        <div class="coords-grid">
+            <!-- Карточка X -->
+            <div class="coord-card card-x">
+                <h3><div class="icon-box">X</div> Координата X</h3>
+                <p>Отвечает за движение <b>влево</b> и <b>вправо</b>. </p>
+         <p>Если число растёт — герой идет направо. Если уменьшается — бежит налево.</p>
+            </div>
+
+            <!-- Карточка Y -->
+            <div class="coord-card card-y">
+                <h3><div class="icon-box">Y</div> Координата Y</h3>
+                <p>Отвечает за движение <b>вверх</b> и <b>вниз</b>.</p>
+                <p>Прыгаем вверх? Y увеличивается. Спускаемся в подвал? Y уменьшается.</p>
+            </div>
+        </div>
+
+        <div class="example-box">
+            <p>🎯 <b>Центр сцены</b> всегда имеет адрес <b>X: 0, Y: 0</b>. Это точка, от которой мы считаем все остальные шаги!</p>
+        </div>
+
+        <div class="important-note">
+            <span>📢</span>
+            <span>Запомни: сначала мы всегда говорим, где герой стоит по горизонтали (X), а потом — на какой он высоте (Y).</span>
+        </div>
+    </section>
+
+<section class="practice-section">
+        <div class="practice-header">
+            <h2>Программируем движения 🚀</h2>
+            <p>Выбери героя и попробуй оживить его с помощью кода!</p>
+        </div>
+
+        <div class="tasks-container">
+            <!-- Задание 1: Прыгающий мяч -->
+            <div class="task-card">
+                <div class="task-image">
+                    <div class="ball-animation"></div>
+                </div>
+                <h3>Прыгающий мяч</h3>
+                <p class="task-description">Заставь мячик весело прыгать вверх и вниз по сцене.</p>
+                <div class="hint-badge">Используй изменение Y</div>
+            </div>
+
+            <!-- Задание 2: Бегущий краб -->
+            <div class="task-card">
+                <div class="task-image">
+                    <div class="crab-animation">🦀</div>
+                </div>
+                <h3>Бегущий краб</h3>
+                <p class="task-description">Научи краба быстро бегать из стороны в сторону.</p>
+                <div class="hint-badge">Используй изменение X</div>
+            </div>
+        </div>
+ <!-- Кнопка перехода в Scratch -->
+        <div class="cta-container">
+            <a href="https://scratch.mit.edu/projects/editor/" target="_blank" class="scratch-button">
+                🚀 Перейти в Scratch
+            </a>
+        </div>
+    </section>
+
+
+    <section class="control-section">
+    <div class="header">
+        <h2>Помоги Кролику собрать все пасхальные яйца🕹️</h2>
+        <p>Посмотри, как работает управление, и попробуй создать такое же в своем проекте!</p>
+    </div>
+
+    <!-- Место для встроенного фрейма Scratch -->
+    <div class="game-frame-container">
+        <p style="color: #888; text-align: center; padding: 20px;">
+        <iframe src="https://scratch.mit.edu/projects/1299222602/embed" allowtransparency="true" width="485" height="402" frameborder="0" scrolling="no" allowfullscreen></iframe>
+        </p>
+    </div>
+
+    <div class="btn-container">
+        <a href="https://scratch.mit.edu/projects/1299268707" target="_blank" class="scratch-button">
+            🚀 Перейти в заготовку проекта
+        </a>
+    </div>
+
+    <div class="keyboard-visual">
+        <div class="key-group">
+            <div class="key up">↑ <span>Y+</span></div>
+            <div class="key left">← <span>X-</span></div>
+            <div class="key down">↓ <span>Y-</span></div>
+            <div class="key right">→ <span>X+</span></div>
+        </div>
+    </div>
+
+    <div class="formula-box">
+        <strong>💡 Золотое правило координат:</strong><br>
+        Чтобы идти <b>вверх/вниз</b> — меняем <b>Y</b>.<br>
+        Чтобы идти <b>вправо/влево</b> — меняем <b>X</b>.
+    </div>
+
+    <table class="hint-table">
+        <tr class="hint-row">
+            <td class="hint-cell">↑</td>
+            <td class="hint-cell">Блок «когда клавиша стрелка вверх нажата» → изменить <b>y</b> на <b>10</b>
+            <br><img src="https://github.com/nazarina/lesson-7/blob/main/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0%202026-04-03%20082306.png?raw=true">
+            </td>
+        </tr>
+        <tr class="hint-row">
+            <td class="hint-cell">↓</td>
+            <td class="hint-cell">Блок «когда клавиша стрелка вниз нажата» → изменить <b>y</b> на <b>-10</b>
+                        <br><img src="https://github.com/nazarina/lesson-7/blob/main/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0%202026-04-03%20082354.png?raw=true"></td>
+        </tr>
+        <tr class="hint-row">
+            <td class="hint-cell">→</td>
+            <td class="hint-cell">Блок «когда клавиша стрелка вправо нажата» → изменить <b>x</b> на <b>10</b>
+             <br><img src="https://github.com/nazarina/lesson-7/blob/main/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0%202026-04-03%20082419.png?raw=true"></td>
+            </td>
+        </tr>
+        <tr class="hint-row">
+            <td class="hint-cell">←</td>
+            <td class="hint-cell">Блок «когда клавиша стрелка влево нажата» → изменить <b>x</b> на <b>-10</b>
+             <br><img src="https://github.com/nazarina/lesson-7/blob/main/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0%202026-04-03%20082451.png?raw=true"></td>
+            </td>
+        </tr>
+    </table>
+        <h2>Как написать код для пасхального яйца?
+        <br> <img src="https://github.com/nazarina/lesson-7/blob/main/%D0%A1%D0%BD%D0%B8%D0%BC%D0%BE%D0%BA%20%D1%8D%D0%BA%D1%80%D0%B0%D0%BD%D0%B0%202026-04-03%20082022.png?raw=true"> </h2>
+</section>
+
+    
+    <script>
+        const colors = ['#ff4d4d', '#4d79ff', '#33cc33', '#ffd11a', '#ff9f43', '#ee5253', '#0abde3', '#10ac84', '#5f27cd', '#576574'];
+        const colorNames = ['Красная', 'Синяя', 'Зеленая', 'Желтая', 'Оранжевая', 'Алая', 'Голубая', 'Изумрудная', 'Фиолетовая', 'Серая'];
+        
+        let points = [];
+        let currentIdx = 0;
+        let pointsFound = 0;
+
+        function generatePoints() {
+            const usedCoords = new Set();
+            points = [];
+            
+            for (let i = 0; i < 10; i++) {
+                let rx, ry;
+                do {
+                    rx = Math.floor(Math.random() * 11) - 5; 
+                    ry = Math.floor(Math.random() * 11) - 5;
+                } while (usedCoords.has(`${rx},${ry}`) || (rx === 0 && ry === 0));
+                
+                usedCoords.add(`${rx},${ry}`);
+                points.push({
+                    id: i,
+                    x: rx,
+                    y: ry,
+                    color: colors[i],
+                    name: colorNames[i],
+                    found: false
+                });
+            }
+        }
+
+        function init() {
+            const grid = document.getElementById('grid');
+            generatePoints();
+            
+            // Рисуем деления
+            for(let i = -5; i <= 5; i++) {
+                if(i === 0) continue;
+                
+                const xLabel = document.createElement('div');
+                xLabel.className = 'tick-label';
+                xLabel.innerText = i;
+                xLabel.style.left = (50 + i * 10) + '%';
+                xLabel.style.top = '53%';
+                grid.appendChild(xLabel);
+
+                const yLabel = document.createElement('div');
+                yLabel.className = 'tick-label';
+                yLabel.innerText = i;
+                yLabel.style.left = '45%';
+                yLabel.style.top = (50 - i * 10) + '%';
+                grid.appendChild(yLabel);
+            }
+
+            points.forEach((p, index) => {
+                const dot = document.createElement('div');
+                dot.className = 'point';
+                dot.id = `point-${index}`;
+                dot.style.backgroundColor = p.color;
+                dot.style.left = (50 + p.x * 10) + '%';
+                dot.style.top = (50 - p.y * 10) + '%';
+                grid.appendChild(dot);
+            });
+            
+            updateTask();
+        }
+
+        function updateTask() {
+            const p = points[currentIdx];
+            document.getElementById('task-text').innerHTML = `Где спряталась <b style="color:${p.color}">${p.name}</b> точка?`;
+            document.getElementById('feedback').innerText = '';
+            document.getElementById('inputX').value = '';
+            document.getElementById('inputY').value = '';
+            document.getElementById('stats').innerText = `Осталось найти: ${10 - pointsFound}`;
+            
+            points.forEach((_, i) => {
+                document.getElementById(`point-${i}`).classList.remove('active-target');
+            });
+            document.getElementById(`point-${currentIdx}`).classList.add('active-target');
+        }
+
+        function checkAnswer() {
+            const p = points[currentIdx];
+            const rawX = document.getElementById('inputX').value;
+            const rawY = document.getElementById('inputY').value;
+            
+            const fb = document.getElementById('feedback');
+
+            // Если поля пустые
+            if (rawX === "" || rawY === "") {
+                fb.innerText = "Введи обе координаты!";
+                fb.className = 'feedback error';
+                return;
+            }
+
+            const inX = parseInt(rawX);
+            const inY = parseInt(rawY);
+
+            if (inX === p.x && inY === p.y) {
+                fb.innerText = '✨ Точно! Найдена!';
+                fb.className = 'feedback success';
+                
+                const dotElement = document.getElementById(`point-${currentIdx}`);
+                dotElement.classList.add('found');
+                
+                pointsFound++;
+                
+                setTimeout(() => {
+                    currentIdx++;
+                    if (currentIdx < points.length) {
+                        updateTask();
+                    } else {
+                        document.getElementById('stats').innerText = `Миссия выполнена! 🎉`;
+                        document.getElementById('task-text').innerHTML = '<b>Все точки найдены!</b><br>Ты настоящий мастер навигации.';
+                        document.querySelector('.input-group').style.display = 'none';
+                        document.getElementById('mainBtn').style.display = 'none';
+                    }
+                }, 800);
+            } else {
+                fb.innerText = 'Ой, не тот адрес. Попробуй еще!';
+                fb.className = 'feedback error';
+            }
+        }
+
+        // Обработка Enter для удобства
+        document.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        window.onload = init;
+    </script>
+</body>
+</html>
